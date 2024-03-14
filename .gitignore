@@ -1,0 +1,40 @@
+HELP.md
+target/
+/log/
+!.mvn/wrapper/maven-wrapper.jar
+rebel.xml
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+/build/
+
+### VS Code ###
+.vscode/
+/.vscode/
+/src/main/resources/application-local.yml
+
+### node ###
+node_modules/
+package-lock.json
+
+aibei-admin-front/node/
+aibei-server/src/main/resources/public/
