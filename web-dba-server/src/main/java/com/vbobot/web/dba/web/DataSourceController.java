@@ -32,4 +32,10 @@ public class DataSourceController {
     public CommonResult<DataSourceDTO> save(@RequestBody DataSourceDTO dataSource) {
         return CommonResult.success(dataSourceService.save(dataSource));
     }
+
+    @PostMapping("/delete/{id}")
+    public CommonResult<Void> delete(@PathVariable Integer id) {
+        dataSourceService.delete(id);
+        return CommonResult.success();
+    }
 }

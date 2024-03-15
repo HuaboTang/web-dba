@@ -1,4 +1,4 @@
-import type {AxiosInstance} from 'axios'
+import type { AxiosInstance, AxiosResponse } from 'axios'
 import axios from 'axios'
 import {ElMessage} from "element-plus";
 
@@ -23,7 +23,7 @@ export class ApiService {
             }
         })
 
-        this.axiosInstance.interceptors.response.use((resp) => {
+        this.axiosInstance.interceptors.response.use((resp: AxiosResponse<CommonResponse<any>>) => {
             console.log("resp:", resp)
             if (resp.status !== 200 || resp.data.result !== 200)  {
                 const errorMsg = resp.data?.msg || "服务异常"

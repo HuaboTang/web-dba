@@ -12,4 +12,6 @@ public interface DataSourceService {
     DataSourceDTO save(DataSourceDTO dataSource);
 
     List<DataSourceDTO> getAll();
+
+    void delete(Integer id);
 }

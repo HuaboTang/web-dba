@@ -5,6 +5,7 @@ import { ElMessage, type FormInstance } from 'element-plus'
 import { ApiService } from '@/util/fetch'
 
 class DataSource {
+  id?: number
   type?: string
   name?: string
   url?: string
@@ -15,7 +16,7 @@ class DataSource {
 // refs
 const dataSource = reactive<DataSource>({})
 const dataSources = ref<DataSource[]>([])
-const addDataSourceDialogVisible = ref(false)
+const dataSourceDialogVisible = ref(false)
 const dataSourceFormRules = ref({
   type: [{required: true, message: '请选择类型', trigger: 'blur'}],
   name: [{required: true, message: '请输入名称', trigger: 'blur'}],
@@ -28,7 +29,10 @@ const dataSourceForm = ref<FormInstance>()
 
 // events
 const onAddDataSource = () => {
-  addDataSourceDialogVisible.value = true
+  dataSourceDialogVisible.value = true
+  Object.assign(dataSource, {
+    id: null, name: null, url: null, type: null, username: null, password: null
+  })
 }
 
 const onTestConnection = async () => {
@@ -60,10 +64,29 @@ const onDataSourceFormSubmit = async () => {
   console.log("save response:", response)
   if (response.data.result === 200) {
     ElMessage({ message: '添加成功', type: 'success'})
-    addDataSourceDialogVisible.value = false
+    dataSourceDialogVisible.value = false
     loadDataSource()
   } else {
-    ElMessage({ message: '添加失败: ' + response.data.data.message, type: 'error'})
+    ElMessage({ message: '添加失败: ' + response.data.message, type: 'error'})
+  }
+}
+
+const onEditDataSource = (record: DataSource) => {
+  Object.assign(dataSource, record)
+  dataSourceDialogVisible.value = true
+  dataSourceForm?.value?.resetFields()
+}
+
+const onDeleteDataSource = async (record: DataSource) => {
+  console.log("onDeleteDataSource", record)
+  const response = await ApiService.getInstance().post('/api/datasource/delete/' + record.id)
+  console.log("delete response:", response)
+  if (response.data.result === 200) {
+    dataSourceDialogVisible.value = false
+    ElMessage({ message: '删除成功', type: 'success'})
+    loadDataSource()
+  } else {
+    ElMessage({ message: '删除失败: ' + response.data.message, type: 'error'})
   }
 }
 // /events
@@ -80,7 +103,7 @@ loadDataSource()
 <template>
   <el-row :gutter="20">
     <el-col :span="6" v-for="item in dataSources" :key="item.name">
-      <el-card class="box-card">
+      <el-card class="box-card" @click="onEditDataSource(item)">
         {{item.name}}
       </el-card>
     </el-col>
@@ -90,7 +113,7 @@ loadDataSource()
   </el-row>
 
   <el-drawer
-      v-model="addDataSourceDialogVisible"
+      v-model="dataSourceDialogVisible"
       title="添加数据源"
       size="50%">
     <el-form
@@ -121,6 +144,9 @@ loadDataSource()
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onDataSourceFormSubmit">添加</el-button>
+      </el-form-item>
+      <el-form-item v-if="dataSource.id">
+        <el-button type="danger" @click="onDeleteDataSource(dataSource)">删除</el-button>
       </el-form-item>
     </el-form>
   </el-drawer>

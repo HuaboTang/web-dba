@@ -5,6 +5,7 @@ import com.vbobot.web.dba.dao.datasource.DataSourceRepository;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -30,6 +31,7 @@ public class DataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public DataSourceDTO save(DataSourceDTO dataSource) {
         final DataSourceDO entity = DataSourceConvertor.INST.toDataSourceEntity(dataSource);
         final DataSourceDO result = dataSourceRepository.save(entity);
@@ -39,5 +41,12 @@ public class DataSourceServiceImpl implements DataSourceService {
     @Override
     public List<DataSourceDTO> getAll() {
         return dataSourceRepository.findAll().stream().map(DataSourceConvertor.INST::toDataSourceDTO).toList();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Integer id) {
+        log.info("delete datasource, id={}", id);
+        dataSourceRepository.deleteById(id);
     }
 }
