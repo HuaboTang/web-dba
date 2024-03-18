@@ -2,12 +2,14 @@ package com.vbobot.web.dba.service.datasource;
 
 import jakarta.persistence.Column;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * @author Bobo
  * @date 2024/3/14
  */
 @Data
+@Accessors(chain = true)
 public class DataSourceDTO {
     private Integer id;
 

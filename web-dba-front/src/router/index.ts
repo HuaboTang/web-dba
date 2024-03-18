@@ -10,6 +10,11 @@ const router = createRouter({
       component: DataSourceView
     },
     {
+      path: '/import',
+      name: 'import',
+      component:  () => import('@/views/ImportView.vue')
+    },
+    {
       path: '/about',
       name: 'about',
       // route level code-splitting

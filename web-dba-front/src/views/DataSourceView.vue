@@ -72,6 +72,7 @@ const onDataSourceFormSubmit = async () => {
 }
 
 const onEditDataSource = (record: DataSource) => {
+  console.log('onEditDataSource', record)
   Object.assign(dataSource, record)
   dataSourceDialogVisible.value = true
   dataSourceForm?.value?.resetFields()

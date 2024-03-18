@@ -13,6 +13,12 @@ import { RouterLink, RouterView } from 'vue-router'
             <span>数据源</span>
           </template>
         </el-menu-item>
+        <el-menu-item index="/import">
+          <template #title>
+            <i class="el-icon-s-home"></i>
+            <span>数据导入</span>
+          </template>
+        </el-menu-item>
         <el-menu-item index="/about">
           <template #title>
             <i class="el-icon-s-promotion"></i>
