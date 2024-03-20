@@ -10,9 +10,17 @@ import lombok.Data;
 public class ColumnDTO {
     private String name;
     private String type;
+    private Boolean primaryKey;
 
     public ColumnDTO(String name, String type) {
         this.name = name;
         this.type = type;
+        this.primaryKey = false;
+    }
+
+    public ColumnDTO(String name, String type, Boolean primaryKey) {
+        this.name = name;
+        this.type = type;
+        this.primaryKey = primaryKey;
     }
 }

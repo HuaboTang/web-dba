@@ -18,7 +18,7 @@ class DataSourceMetaDataHelperTest {
     void columns() throws Exception {
         final Connection connection = getConnection();
         DataSourceMetaDataHelper dataSourceMetaDataHelper = new DataSourceMetaDataHelper();
-        final List<ColumnDTO> columns = dataSourceMetaDataHelper.columns("WEB_DEV", "import_test", connection);
+        final List<ColumnDTO> columns = dataSourceMetaDataHelper.columns("web_dba", "sync_source", connection);
         System.out.println(columns);
     }
 
@@ -42,12 +42,11 @@ class DataSourceMetaDataHelperTest {
 
     private static Connection getConnection() throws SQLException {
         final DataSourceConnectionManager dataSourceConnectionManager = new DataSourceConnectionManager();
-        final Connection connection = dataSourceConnectionManager.getConnection(new DataSourceDTO()
+        return dataSourceConnectionManager.getConnection(new DataSourceDTO()
                 .setId(20240315)
-                .setUrl("jdbc:dm://10.207.136.10:5236")
-                .setType(DataSourceTypeEnum.DM)
-                .setUsername("SYSDBA")
-                .setPassword("z#xXkSs47hE3"));
-        return connection;
+                .setUrl("jdbc:mysql://10.0.80.173:3306/web_dba?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true&allowPublicKeyRetrieval=true")
+                .setType(DataSourceTypeEnum.MYSQL)
+                .setUsername("root")
+                .setPassword("Gzfin@2901"));
     }
 }

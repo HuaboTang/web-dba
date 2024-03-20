@@ -15,12 +15,14 @@ const router = createRouter({
       component:  () => import('@/views/ImportView.vue')
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue')
+      path: '/data/sync',
+      name: 'data-sync',
+      component: () => import('../views/DataSyncView.vue')
+    },
+    {
+      path: '/data/sync/add',
+      name: 'data-sync-add',
+      component: () => import('../views/DataSyncAddView.vue')
     }
   ]
 })

@@ -19,10 +19,10 @@ import { RouterLink, RouterView } from 'vue-router'
             <span>数据导入</span>
           </template>
         </el-menu-item>
-        <el-menu-item index="/about">
+        <el-menu-item index="/data/sync">
           <template #title>
             <i class="el-icon-s-promotion"></i>
-            <span>关于</span>
+            <span>数据同步</span>
           </template>
         </el-menu-item>
       </el-menu>
