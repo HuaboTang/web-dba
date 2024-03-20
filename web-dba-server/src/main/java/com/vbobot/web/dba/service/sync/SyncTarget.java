@@ -20,6 +20,8 @@ import java.sql.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Bobo
@@ -103,64 +105,86 @@ public class SyncTarget {
             return;
         }
 
+
+        try (final Connection connection = dataSourceConnectionManager.getConnection(dataSource)) {
+            connection.setAutoCommit(false);
+            flush(connection);
+            connection.commit();
+        }
+    }
+
+    private void flush(Connection connection) throws SQLException {
+        final List<List<Object>> needUpdateRows = Lists.newArrayList();
+
+        flushInsertAndSeparateUpdates(connection, needUpdateRows);
+
+        if (!needUpdateRows.isEmpty()) {
+            flushUpdate(connection, needUpdateRows);
+        }
+
+        primaryKeyBuffer.clear();
+        buffer.clear();
+    }
+
+    private void flushUpdate(Connection connection, List<List<Object>> needUpdateRows) throws SQLException {
+        log.info("needUpdateRows:{}", needUpdateRows.size());
+
+        final String columnValueSet = String.join(",", dataColumns.stream()
+                .filter(c -> !c.getName().equalsIgnoreCase(primaryKey.getName()))
+                .map(c -> c.getName() + " = ?")
+                .toArray(String[]::new));
+        final String updateSql = "update %s.%s set %s where %s = ?".formatted(
+                syncJob.getTargetSchema(), syncJob.getTargetTable(),
+                columnValueSet, primaryKey.getName());
+        log.info("update-sql:{}", updateSql);
+
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {
+            for (List<Object> objects : needUpdateRows) {
+                final AtomicInteger setIndex = new AtomicInteger(1);
+                for (int i = 0; i < objects.size(); i++) {
+                    if (i == primaryKeyIndex) {
+                        continue;
+                    }
+                    preparedStatement.setObject(setIndex.getAndIncrement(), objects.get(i));
+                }
+                preparedStatement.setObject(dataColumns.size(), objects.get(primaryKeyIndex));
+                preparedStatement.addBatch();
+            }
+            preparedStatement.executeBatch();
+        }
+    }
+
+    private void flushInsertAndSeparateUpdates(Connection connection, List<List<Object>> needUpdateRows) throws SQLException {
         final String selectByIdIn = "select %s from %s.%s where %s in (%s)".formatted(
                 primaryKey.getName(), syncJob.getTargetSchema(),
                 syncJob.getTargetTable(), primaryKey.getName(),
                 String.join(",", primaryKeyBuffer.stream().map(Object::toString).toArray(String[]::new)));
 
-        try (final Connection connection = dataSourceConnectionManager.getConnection(dataSource)) {
-            final List<List<Object>> needUpdateRows = Lists.newArrayList();
-
-            final String insertSql = "insert into %s.%s (%s) values (%s)".formatted(
-                    syncJob.getTargetSchema(), syncJob.getTargetTable(),
-                    String.join(",", dataColumns.stream().map(ColumnDTO::getName).toArray(String[]::new)),
-                    String.join(",", dataColumns.stream().map(c -> "?").toArray(String[]::new)));
-            try (final PreparedStatement preparedStatement = connection.prepareStatement(insertSql)) {
-                connection.setAutoCommit(false);
-                final Set<Object> existsPrimaryKeys = findPrimaryKeys(connection, selectByIdIn);
-                for (List<Object> objects : this.buffer) {
-                    final Object primaryKey = objects.get(primaryKeyIndex);
-                    if (existsPrimaryKeys.contains(primaryKey)) {
-                        log.debug("{} exists, need update", primaryKey);
-                        needUpdateRows.add(objects);
-                        continue;
-                    }
-
-                    for (int i = 1; i <= dataColumns.size(); i++) {
-                        preparedStatement.setObject(i, objects.get(i - 1));
-                    }
-                    preparedStatement.addBatch();
+        final String insertSql = "insert into %s.%s (%s) values (%s)".formatted(
+                syncJob.getTargetSchema(), syncJob.getTargetTable(),
+                String.join(",", dataColumns.stream().map(ColumnDTO::getName).toArray(String[]::new)),
+                String.join(",", dataColumns.stream().map(c -> "?").toArray(String[]::new)));
+        try (final PreparedStatement preparedStatement = connection.prepareStatement(insertSql)) {
+            final AtomicBoolean anyAddedBatch = new AtomicBoolean(false);
+            final Set<Object> existsPrimaryKeys = findPrimaryKeys(connection, selectByIdIn);
+            for (List<Object> objects : this.buffer) {
+                final Object primaryKey = objects.get(primaryKeyIndex);
+                if (existsPrimaryKeys.contains(primaryKey)) {
+                    log.debug("{} exists, need update", primaryKey);
+                    needUpdateRows.add(objects);
+                    continue;
                 }
+
+                anyAddedBatch.set(true);
+                for (int i = 1; i <= dataColumns.size(); i++) {
+                    preparedStatement.setObject(i, objects.get(i - 1));
+                }
+                preparedStatement.addBatch();
+            }
+
+            if (anyAddedBatch.get()) {
                 preparedStatement.executeBatch();
             }
-
-            if (!needUpdateRows.isEmpty()) {
-                log.info("needUpdateRows:{}", needUpdateRows.size());
-
-                final String updateSql = "update %s.%s set %s where %s = ?".formatted(
-                        syncJob.getTargetSchema(), syncJob.getTargetTable(),
-                        String.join(",", dataColumns.stream().map(c -> c.getName() + " = ?").toArray(String[]::new)),
-                        primaryKey.getName());
-
-                try (final PreparedStatement preparedStatement = connection.prepareStatement(updateSql)) {
-                    for (List<Object> objects : needUpdateRows) {
-                        for (int i = 1; i <= dataColumns.size(); i++) {
-                            if (i == primaryKeyIndex + 1) {
-                                continue;
-                            }
-                            preparedStatement.setObject(i, objects.get(i - 1));
-                        }
-                        preparedStatement.setObject(dataColumns.size() + 1, objects.get(primaryKeyIndex));
-                        preparedStatement.addBatch();
-                    }
-                    preparedStatement.executeBatch();
-                }
-            }
-
-            connection.commit();
-
-            primaryKeyBuffer.clear();
-            buffer.clear();
         }
     }
 
